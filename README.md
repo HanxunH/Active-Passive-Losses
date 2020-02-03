@@ -1,6 +1,11 @@
 # Active Passive Losses
 Code for Paper ["Rethinking Robust Loss Functions for Deep Learning with Noisy Labels"]()
 
+## Requirements
+```console
+Python >= 3.6, PyTorch >= 1.3.1, torchvision >= 0.4.1
+```
+
 ## How To Run
 ##### Arguments
 
