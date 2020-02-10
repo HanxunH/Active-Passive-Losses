@@ -6,6 +6,8 @@ from numpy.testing import assert_array_almost_equal
 import numpy as np
 import os
 import torch
+import random
+import collections
 
 
 def build_for_cifar100(size, noise):
@@ -418,6 +420,127 @@ class Clothing1MDatasetLoader:
         return data_loaders
 
 
+class NosieImageNet(datasets.ImageNet):
+    def __init__(self, root, split='train', seed=999, download=None, target_class_num=200, nosiy_rate=0.4, **kwargs):
+        super(NosieImageNet, self).__init__(root, download=download, split=split, **kwargs)
+        random.seed(seed)
+        np.random.seed(seed)
+        self.new_idx = random.sample(list(range(0, 1000)), k=target_class_num)
+        print(len(self.new_idx), len(self.imgs))
+        self.new_imgs = []
+        self.new_targets = []
+
+        for file, cls_id in self.imgs:
+            if cls_id in self.new_idx:
+                new_idx = self.new_idx.index(cls_id)
+                self.new_imgs.append((file, new_idx))
+                self.new_targets.append(new_idx)
+        self.imgs = self.new_imgs
+        self.targets = self.new_targets
+        print(min(self.targets), max(self.targets))
+        # Noise
+        if split == 'train':
+            n_samples = len(self.targets)
+            n_noisy = int(nosiy_rate * n_samples)
+            print("%d Noisy samples" % (n_noisy))
+            class_index = [np.where(np.array(self.targets) == i)[0] for i in range(target_class_num)]
+            class_noisy = int(n_noisy / target_class_num)
+            noisy_idx = []
+            for d in range(target_class_num):
+                print(len(class_index[d]), d)
+                noisy_class_index = np.random.choice(class_index[d], class_noisy, replace=False)
+                noisy_idx.extend(noisy_class_index)
+                print("Class %d, number of noisy % d" % (d, len(noisy_class_index)))
+            for i in noisy_idx:
+                self.targets[i] = other_class(n_classes=target_class_num, current_class=self.targets[i])
+                (file, old_idx) = self.imgs[i]
+                self.imgs[i] = (file, self.targets[i])
+            print(len(noisy_idx))
+            print("Print noisy label generation statistics:")
+            for i in range(target_class_num):
+                n_noisy = np.sum(np.array(self.targets) == i)
+                print("Noisy class %s, has %s samples." % (i, n_noisy))
+
+        self.samples = self.imgs
+
+
+class ImageNetDatasetLoader:
+    def __init__(self,
+                 batchSize=128,
+                 eval_batch_size=256,
+                 dataPath='data/',
+                 seed=999,
+                 target_class_num=200,
+                 nosiy_rate=0.4,
+                 numOfWorkers=4):
+        self.batchSize = batchSize
+        self.eval_batch_size = eval_batch_size
+        self.dataPath = dataPath
+        self.numOfWorkers = numOfWorkers
+        self.seed = seed
+        self.target_class_num = target_class_num
+        self.nosiy_rate = nosiy_rate
+        self.data_loaders = self.loadData()
+
+    def getDataLoader(self):
+        return self.data_loaders
+
+    def loadData(self):
+        IMAGENET_MEAN = [0.485, 0.456, 0.406]
+        IMAGENET_STD = [0.229, 0.224, 0.225]
+
+        train_transform = transforms.Compose([
+            transforms.RandomResizedCrop(224),
+            transforms.RandomHorizontalFlip(),
+            transforms.ColorJitter(brightness=0.4,
+                                   contrast=0.4,
+                                   saturation=0.4,
+                                   hue=0.2),
+            transforms.ToTensor(),
+            transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)])
+
+        test_transform = transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)])
+
+        train_dataset = NosieImageNet(root=self.dataPath,
+                                      split='train',
+                                      nosiy_rate=self.nosiy_rate,
+                                      target_class_num=self.target_class_num,
+                                      seed=self.seed,
+                                      transform=train_transform,
+                                      download=True)
+
+        test_dataset = NosieImageNet(root=self.dataPath,
+                                     split='val',
+                                     nosiy_rate=self.nosiy_rate,
+                                     target_class_num=self.target_class_num,
+                                     seed=self.seed,
+                                     transform=test_transform,
+                                     download=True)
+
+        data_loaders = {}
+
+        data_loaders['train_dataset'] = DataLoader(dataset=train_dataset,
+                                                   batch_size=self.batchSize,
+                                                   shuffle=True,
+                                                   pin_memory=True,
+                                                   num_workers=self.numOfWorkers)
+
+        data_loaders['test_dataset'] = DataLoader(dataset=test_dataset,
+                                                  batch_size=self.batchSize,
+                                                  shuffle=False,
+                                                  pin_memory=True,
+                                                  num_workers=self.numOfWorkers)
+        return data_loaders
+
+
+
+
+
+
 def online_mean_and_sd(loader):
     """Compute the mean and sd in an online fashion
 
@@ -442,20 +565,22 @@ def online_mean_and_sd(loader):
 
 
 if __name__ == '__main__':
-    train_transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-    ])
-    test = Clothing1MDataset(path='../datasets/clothing1M', transform=train_transform)
-    loader = DataLoader(test,
-                        batch_size=128,
-                        num_workers=12,
-                        shuffle=True)
-    mean, std = online_mean_and_sd(loader)
-    print(mean)
-    print(std)
-
-    '''
-        tensor([0.7215, 0.6846, 0.6679])
-        tensor([0.3021, 0.3122, 0.3167])
-    '''
+    # train_transform = transforms.Compose([
+    #     transforms.Resize((224, 224)),
+    #     transforms.ToTensor(),
+    # ])
+    # test = Clothing1MDataset(path='../datasets/clothing1M', transform=train_transform)
+    # loader = DataLoader(test,
+    #                     batch_size=128,
+    #                     num_workers=12,
+    #                     shuffle=True)
+    # mean, std = online_mean_and_sd(loader)
+    # print(mean)
+    # print(std)
+    #
+    # '''
+    #     tensor([0.7215, 0.6846, 0.6679])
+    #     tensor([0.3021, 0.3122, 0.3167])
+    # '''
+    train = NosieImageNet(root='../datasets/ILSVR2012', split='train')
+    valid = NosieImageNet(root='../datasets/ILSVR2012', split='val')

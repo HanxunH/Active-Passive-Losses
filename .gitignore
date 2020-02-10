@@ -5,3 +5,5 @@ logs
 .DS_Store
 .ipynb_checkpoints
 plots_paper_figures_iccv.py
+plot/
+slurm/

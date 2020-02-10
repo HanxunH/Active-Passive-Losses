@@ -8,7 +8,7 @@ import logging
 import torchvision
 from tqdm import tqdm
 from model import SCEModel, ResNet34
-from dataset import DatasetGenerator, Clothing1MDatasetLoader
+from dataset import DatasetGenerator, Clothing1MDatasetLoader, ImageNetDatasetLoader
 from utils.utils import AverageMeter, accuracy, count_parameters_in_MB
 from torch.optim.lr_scheduler import CosineAnnealingLR, MultiStepLR
 from train_util import TrainUtil
@@ -32,7 +32,7 @@ parser.add_argument('--alpha', type=float, default=1.0, help='alpha scale')
 parser.add_argument('--beta', type=float, default=1.0, help='beta scale')
 parser.add_argument('--q', type=float, default=0.7, help='q for gce')
 parser.add_argument('--gamma', type=float, default=2, help='gamma for FocalLoss')
-parser.add_argument('--dataset_type', choices=['mnist', 'cifar10', 'cifar100', 'clothing1m'], type=str, default='cifar10')
+parser.add_argument('--dataset_type', choices=['mnist', 'cifar10', 'cifar100', 'clothing1m', 'imagenet'], type=str, default='cifar10')
 parser.add_argument('--scale_exp', action='store_true', default=False)
 parser.add_argument('--alpha_beta_exp', action='store_true', default=False)
 parser.add_argument('--version', type=str, default='robust_loss')
@@ -53,11 +53,18 @@ elif args.dataset_type == 'mnist':
 elif args.dataset_type == 'clothing1m':
     args.checkpoint_path = 'checkpoints/clothing1m/'
     log_dataset_type = 'clothing1m'
+elif args.dataset_type == 'imagenet':
+    args.checkpoint_path = 'checkpoints/ILSVR2012/'
+    log_dataset_type = 'imagenet'
 else:
     raise('Unknown Dataset')
 
 log_sym_type = ''
-if not args.dataset_type == 'clothing1m':
+if args.dataset_type == 'clothing1m':
+    log_dataset_type = 'clothing1m'
+elif args.dataset_type == 'imagenet':
+    log_dataset_type = 'imagenet'
+elif not args.dataset_type == 'clothing1m':
     args.version = str(args.nr) + 'nr_' + args.loss.lower()
     if args.scale_exp:
         args.version += '_scale_' + str(args.alpha)
@@ -70,8 +77,7 @@ if not args.dataset_type == 'clothing1m':
     else:
         log_sym_type = 'sym'
         args.checkpoint_path += 'sym/' + args.run_version + '/'
-else:
-    log_dataset_type = 'clothing1m'
+
 
 if not os.path.exists(args.checkpoint_path):
     os.makedirs(args.checkpoint_path)
@@ -230,6 +236,13 @@ def train():
         dataset = Clothing1MDatasetLoader(batchSize=args.batch_size,
                                           dataPath=args.data_path,
                                           numOfWorkers=args.data_nums_workers)
+    elif args.dataset_type == 'imagenet':
+        dataset = ImageNetDatasetLoader(batchSize=args.batch_size,
+                                        dataPath=args.data_path,
+                                        seed=args.seed,
+                                        target_class_num=200,
+                                        nosiy_rate=0.4,
+                                        numOfWorkers=args.data_nums_workers)
     else:
         dataset = DatasetGenerator(batchSize=args.batch_size,
                                    dataPath=args.data_path,
@@ -284,6 +297,12 @@ def train():
         if args.loss == 'NLNL':
             args.epoch = 720
 
+    elif args.dataset_type == 'imagenet':
+        args.epoch = 100
+        args.l2_reg = 3e-5
+        num_classes = 200
+        fixed_cnn = torchvision.models.resnet50(num_classes=num_classes)
+
     logger.info("num_classes: %s" % (num_classes))
 
     loss_options = {
@@ -337,6 +356,8 @@ def train():
                                             eta_min=eta_min)
     if args.dataset_type == 'clothing1m':
         fixed_cnn_scheduler = MultiStepLR(fixed_cnn_optmizer, milestones=[5, 10], gamma=0.1)
+    elif args.dataset_type == 'imagenet':
+        fixed_cnn_scheduler = MultiStepLR(fixed_cnn_optmizer, milestones=[30, 60, 80], gamma=0.1)
 
     utilHelper = TrainUtil(checkpoint_path=args.checkpoint_path, version=args.version)
     starting_epoch = 0
