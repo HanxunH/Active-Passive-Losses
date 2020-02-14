@@ -4,6 +4,8 @@ data
 logs
 .DS_Store
 .ipynb_checkpoints
+plots_paper_figures.py
+plot_results.ipynb
 plots_paper_figures_iccv.py
 plot/
 slurm/
