@@ -1,4 +1,4 @@
-# Active Passive Losses
+# Normalized Loss Functions - Active Passive Losses
 Code for Paper ["Normalized Loss Functions for Deep Learning with Noisy Labels"]()(Preprint Version comming soon)
 
 ## Requirements
