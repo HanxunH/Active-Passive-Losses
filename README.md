@@ -24,13 +24,13 @@ Example for 0.4 Symmetric noise rate with NCE+RCE loss
 $  python3  main.py --exp_name      test_exp            \
                     --noise_rate    0.4                 \
                     --version       nce+rce             \
-                    ----config_path configs/cifar10/sym \
+                    --config_path configs/cifar10/sym   \
                     --seed          123
 
 # CIFAR-100
 $  python3  main.py --exp_name      test_exp             \
                     --noise_rate    0.4                  \
                     --version       nce+rce              \
-                    ----config_path configs/cifar100/sym \
+                    --config_path configs/cifar100/sym.  \
                     --seed          123
 ```
