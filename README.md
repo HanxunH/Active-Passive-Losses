@@ -1,5 +1,5 @@
 # Active Passive Losses
-Code for Paper ["Rethinking Robust Loss Functions for Deep Learning with Noisy Labels"]()
+Code for Paper ["Normalized Loss Functions for Deep Learning with Noisy Labels"]()
 
 ## Requirements
 ```console
