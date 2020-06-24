@@ -59,7 +59,3 @@ for i in "${nr_arr[@]}"
       rm -rf ${exp_name}/cifar10/asym/$i/${loss}/*
       python3 -u main.py --exp_name ${exp_name}/cifar10/asym/$i --seed $seed --noise_rate $i --config_path configs/cifar10/asym --version ${loss}
 done
-
-
-
-python3 -u main.py --exp_name test/cifar10/sym/0.8 --seed 0 --noise_rate 0.8 --config_path configs/cifar10/sym --version nce+mae
