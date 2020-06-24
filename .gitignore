@@ -9,3 +9,12 @@ plot_results.ipynb
 plots_paper_figures_iccv.py
 plot/
 slurm/
+results/
+ProcessWebVision.ipynb
+results
+configs/webvision_full
+configs/webvision_imagenet
+configs/clothing1m
+script/WebVisionFull.slurm
+script/WebVisionFull_ImageNet.slurm
+script/Clothing1M.slurm

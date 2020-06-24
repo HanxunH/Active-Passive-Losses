@@ -7,7 +7,7 @@ import numpy as np
 import os
 import torch
 import random
-import mlconfig
+import collections
 
 
 def build_for_cifar100(size, noise):
@@ -117,9 +117,8 @@ class MNISTNoisy(datasets.MNIST):
 
 
 class cifar10Nosiy(datasets.CIFAR10):
-    def __init__(self, root, train=True, transform=None, target_transform=None, download=True, nosiy_rate=0.0, asym=False):
+    def __init__(self, root, train=True, transform=None, target_transform=None, download=False, nosiy_rate=0.0, asym=False):
         super(cifar10Nosiy, self).__init__(root, transform=transform, target_transform=target_transform)
-        self.download = download
         if asym:
             # automobile < - truck, bird -> airplane, cat <-> dog, deer -> horse
             source_class = [9, 2, 3, 5, 4]
@@ -153,9 +152,8 @@ class cifar10Nosiy(datasets.CIFAR10):
 
 
 class cifar100Nosiy(datasets.CIFAR100):
-    def __init__(self, root, train=True, transform=None, target_transform=None, download=True, nosiy_rate=0.0, asym=False, seed=0):
+    def __init__(self, root, train=True, transform=None, target_transform=None, download=False, nosiy_rate=0.0, asym=False, seed=0):
         super(cifar100Nosiy, self).__init__(root, download=download, transform=transform, target_transform=target_transform)
-        self.download = download
         if asym:
             """mistakes are inside the same superclass of 10 classes, e.g. 'fish'
             """
@@ -197,25 +195,24 @@ class cifar100Nosiy(datasets.CIFAR100):
             return
 
 
-@mlconfig.register
 class DatasetGenerator():
     def __init__(self,
-                 train_batch_size=128,
+                 batchSize=128,
                  eval_batch_size=256,
-                 data_path='data/',
+                 dataPath='data/',
                  seed=123,
-                 num_of_workers=4,
+                 numOfWorkers=4,
                  asym=False,
-                 dataset_type='CIFAR10',
+                 dataset_type='cifar10',
                  is_cifar100=False,
                  cutout_length=16,
                  noise_rate=0.4):
         self.seed = seed
         np.random.seed(seed)
-        self.train_batch_size = train_batch_size
+        self.batchSize = batchSize
         self.eval_batch_size = eval_batch_size
-        self.data_path = data_path
-        self.num_of_workers = num_of_workers
+        self.dataPath = dataPath
+        self.numOfWorkers = numOfWorkers
         self.cutout_length = cutout_length
         self.noise_rate = noise_rate
         self.dataset_type = dataset_type
@@ -227,7 +224,7 @@ class DatasetGenerator():
         return self.data_loaders
 
     def loadData(self):
-        if self.dataset_type == 'MNIST':
+        if self.dataset_type == 'mnist':
             MEAN = [0.1307]
             STD = [0.3081]
             train_transform = transforms.Compose([
@@ -238,7 +235,7 @@ class DatasetGenerator():
                 transforms.ToTensor(),
                 transforms.Normalize(MEAN, STD)])
 
-            train_dataset = MNISTNoisy(root=self.data_path,
+            train_dataset = MNISTNoisy(root=self.dataPath,
                                        train=True,
                                        transform=train_transform,
                                        download=True,
@@ -246,12 +243,12 @@ class DatasetGenerator():
                                        seed=self.seed,
                                        nosiy_rate=self.noise_rate)
 
-            test_dataset = datasets.MNIST(root=self.data_path,
+            test_dataset = datasets.MNIST(root=self.dataPath,
                                           train=False,
                                           transform=test_transform,
                                           download=True)
 
-        elif self.dataset_type == 'CIFAR100':
+        elif self.dataset_type == 'cifar100':
             CIFAR_MEAN = [0.5071, 0.4865, 0.4409]
             CIFAR_STD = [0.2673, 0.2564, 0.2762]
 
@@ -266,7 +263,7 @@ class DatasetGenerator():
                 transforms.ToTensor(),
                 transforms.Normalize(CIFAR_MEAN, CIFAR_STD)])
 
-            train_dataset = cifar100Nosiy(root=self.data_path,
+            train_dataset = cifar100Nosiy(root=self.dataPath,
                                           train=True,
                                           transform=train_transform,
                                           download=True,
@@ -274,12 +271,12 @@ class DatasetGenerator():
                                           seed=self.seed,
                                           nosiy_rate=self.noise_rate)
 
-            test_dataset = datasets.CIFAR100(root=self.data_path,
+            test_dataset = datasets.CIFAR100(root=self.dataPath,
                                              train=False,
                                              transform=test_transform,
                                              download=True)
 
-        elif self.dataset_type == 'CIFAR10':
+        elif self.dataset_type == 'cifar10':
             CIFAR_MEAN = [0.49139968, 0.48215827, 0.44653124]
             CIFAR_STD = [0.24703233, 0.24348505, 0.26158768]
 
@@ -293,14 +290,14 @@ class DatasetGenerator():
                 transforms.ToTensor(),
                 transforms.Normalize(CIFAR_MEAN, CIFAR_STD)])
 
-            train_dataset = cifar10Nosiy(root=self.data_path,
+            train_dataset = cifar10Nosiy(root=self.dataPath,
                                          train=True,
                                          transform=train_transform,
                                          download=True,
                                          asym=self.asym,
                                          nosiy_rate=self.noise_rate)
 
-            test_dataset = datasets.CIFAR10(root=self.data_path,
+            test_dataset = datasets.CIFAR10(root=self.dataPath,
                                             train=False,
                                             transform=test_transform,
                                             download=True)
@@ -310,16 +307,16 @@ class DatasetGenerator():
         data_loaders = {}
 
         data_loaders['train_dataset'] = DataLoader(dataset=train_dataset,
-                                                   batch_size=self.train_batch_size,
+                                                   batch_size=self.batchSize,
                                                    shuffle=True,
                                                    pin_memory=True,
-                                                   num_workers=self.num_of_workers)
+                                                   num_workers=self.numOfWorkers)
 
         data_loaders['test_dataset'] = DataLoader(dataset=test_dataset,
                                                   batch_size=self.eval_batch_size,
                                                   shuffle=False,
                                                   pin_memory=True,
-                                                  num_workers=self.num_of_workers)
+                                                  num_workers=self.numOfWorkers)
 
         print("Num of train %d" % (len(train_dataset)))
         print("Num of test %d" % (len(test_dataset)))
@@ -363,28 +360,23 @@ class Clothing1MDataset:
         return imlist
 
 
-@mlconfig.register
 class Clothing1MDatasetLoader:
-    def __init__(self, train_batch_size=128, eval_batch_size=256, data_path='data/', num_of_workers=4, use_cutout=True, cutout_length=112):
-        self.train_batch_size = train_batch_size
+    def __init__(self, batchSize=128, eval_batch_size=256, dataPath='data/', numOfWorkers=4):
+        self.batchSize = batchSize
         self.eval_batch_size = eval_batch_size
-        self.data_path = data_path
-        self.num_of_workers = num_of_workers
-        self.use_cutout = use_cutout
-        self.cutout_length = cutout_length
+        self.dataPath = dataPath
+        self.numOfWorkers = numOfWorkers
         self.data_loaders = self.loadData()
 
     def getDataLoader(self):
         return self.data_loaders
 
     def loadData(self):
-        MEAN = [0.485, 0.456, 0.406]
-        STD = [0.229, 0.224, 0.225]
+        MEAN = [0.6959, 0.6537, 0.6371]
+        STD = [0.3113, 0.3192, 0.3214]
         train_transform = transforms.Compose([
             transforms.RandomResizedCrop(224),
             transforms.RandomHorizontalFlip(),
-            transforms.RandomRotation(20),
-            transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.2),
             transforms.ToTensor(),
             transforms.Normalize(mean=MEAN, std=STD),
          ])
@@ -393,173 +385,43 @@ class Clothing1MDatasetLoader:
             transforms.ToTensor(),
             transforms.Normalize(mean=MEAN, std=STD)
         ])
-        if self.use_cutout:
-            print('Using Cutout')
-            train_transform.transforms.append(Cutout(self.cutout_length))
 
-        train_dataset = Clothing1MDataset(path=self.data_path,
+        train_dataset = Clothing1MDataset(path=self.dataPath,
                                           type='train',
                                           transform=train_transform)
 
-        test_dataset = Clothing1MDataset(path=self.data_path,
+        test_dataset = Clothing1MDataset(path=self.dataPath,
                                          type='test',
                                          transform=test_transform)
 
-        valid_dataset = Clothing1MDataset(path=self.data_path,
+        valid_dataset = Clothing1MDataset(path=self.dataPath,
                                           type='valid',
                                           transform=test_transform)
 
         data_loaders = {}
 
         data_loaders['train_dataset'] = DataLoader(dataset=train_dataset,
-                                                   batch_size=self.train_batch_size,
+                                                   batch_size=self.batchSize,
                                                    shuffle=True,
                                                    pin_memory=True,
-                                                   num_workers=self.num_of_workers)
+                                                   num_workers=self.numOfWorkers)
 
         data_loaders['test_dataset'] = DataLoader(dataset=test_dataset,
                                                   batch_size=self.eval_batch_size,
                                                   shuffle=False,
                                                   pin_memory=True,
-                                                  num_workers=self.num_of_workers)
+                                                  num_workers=self.numOfWorkers)
 
         data_loaders['valid_dataset'] = DataLoader(dataset=valid_dataset,
                                                    batch_size=self.eval_batch_size,
                                                    shuffle=False,
                                                    pin_memory=True,
-                                                   num_workers=self.num_of_workers)
+                                                   num_workers=self.numOfWorkers)
         return data_loaders
-
-
-class WebVisionDataset:
-    def __init__(self, path, file_name='webvision_mini_train', transform=None, target_transform=None):
-        self.target_list = []
-        self.path = path
-        self.load_file(os.path.join(path, file_name))
-        self.transform = transform
-        self.target_transform = target_transform
-        return
-
-    def load_file(self, filename):
-        f = open(filename, "r")
-        for line in f:
-            train_file, label = line.split()
-            self.target_list.append((train_file, int(label)))
-        f.close()
-        return
-
-    def __len__(self):
-        return len(self.target_list)
-
-    def __getitem__(self, index):
-        impath, target = self.target_list[index]
-        img = Image.open(os.path.join(self.path, impath)).convert("RGB")
-        if self.transform is not None:
-            img = self.transform(img)
-        return img, target
-
-
-@mlconfig.register
-class WebVisionDatasetLoader:
-    def __init__(self, setting='mini', train_batch_size=128, eval_batch_size=256, train_data_path='data/', valid_data_path='data/', num_of_workers=4):
-        self.train_batch_size = train_batch_size
-        self.eval_batch_size = eval_batch_size
-        self.train_data_path = train_data_path
-        self.valid_data_path = valid_data_path
-        self.num_of_workers = num_of_workers
-        self.setting = setting
-        self.data_loaders = self.loadData()
-
-    def getDataLoader(self):
-        return self.data_loaders
-
-    def loadData(self):
-        IMAGENET_MEAN = [0.485, 0.456, 0.406]
-        IMAGENET_STD = [0.229, 0.224, 0.225]
-        train_transform = transforms.Compose([transforms.RandomResizedCrop(224),
-                                              transforms.RandomHorizontalFlip(),
-                                              transforms.ColorJitter(brightness=0.4,
-                                                                     contrast=0.4,
-                                                                     saturation=0.4,
-                                                                     hue=0.2),
-                                              transforms.ToTensor(),
-                                              transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)])
-
-        test_transform = transforms.Compose([transforms.Resize(256),
-                                             transforms.CenterCrop(224),
-                                             transforms.ToTensor(),
-                                             transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)])
-
-        if self.setting == 'mini':
-            train_dataset = WebVisionDataset(path=self.train_data_path,
-                                             file_name='webvision_mini_train.txt',
-                                             transform=train_transform)
-
-            test_dataset = ImageNetMini(root=self.valid_data_path,
-                                        split='val',
-                                        transform=test_transform)
-
-        elif self.setting == 'full':
-            train_dataset = WebVisionDataset(path=self.train_data_path,
-                                             file_name='train_filelist_google.txt',
-                                             transform=train_transform)
-
-            test_dataset = WebVisionDataset(path=self.valid_data_path,
-                                            file_name='val_filelist.txt',
-                                            transform=test_transform)
-
-        elif self.setting == 'full_imagenet':
-            train_dataset = WebVisionDataset(path=self.train_data_path,
-                                             file_name='train_filelist_google',
-                                             transform=train_transform)
-
-            test_dataset = datasets.ImageNet(root=self.valid_data_path,
-                                             split='val',
-                                             transform=test_transform)
-
-        else:
-            raise(NotImplementedError)
-
-        data_loaders = {}
-
-        print('Training Set Size %d' % (len(train_dataset)))
-        print('Test Set Size %d' % (len(test_dataset)))
-
-        data_loaders['train_dataset'] = DataLoader(dataset=train_dataset,
-                                                   batch_size=self.train_batch_size,
-                                                   shuffle=True,
-                                                   pin_memory=True,
-                                                   num_workers=self.num_of_workers)
-
-        data_loaders['test_dataset'] = DataLoader(dataset=test_dataset,
-                                                  batch_size=self.eval_batch_size,
-                                                  shuffle=False,
-                                                  pin_memory=True,
-                                                  num_workers=self.num_of_workers)
-
-        return data_loaders
-
-
-class ImageNetMini(datasets.ImageNet):
-    def __init__(self, root, split='val', download=False, **kwargs):
-        super(ImageNetMini, self).__init__(root, download=download, split=split, **kwargs)
-        self.new_targets = []
-        self.new_images = []
-        for i, (file, cls_id) in enumerate(self.imgs):
-            if cls_id <= 49:
-                self.new_targets.append(cls_id)
-                self.new_images.append((file, cls_id))
-                print((file, cls_id))
-        self.imgs = self.new_images
-        self.targets = self.new_targets
-        self.samples = self.imgs
-        print(len(self.samples))
-        print(len(self.targets))
-        return
 
 
 class NosieImageNet(datasets.ImageNet):
-    def __init__(self, root, split='train', seed=999, download=False, target_class_num=200, nosiy_rate=0.4, **kwargs):
+    def __init__(self, root, split='train', seed=999, download=None, target_class_num=200, nosiy_rate=0.4, **kwargs):
         super(NosieImageNet, self).__init__(root, download=download, split=split, **kwargs)
         random.seed(seed)
         np.random.seed(seed)
@@ -675,6 +537,10 @@ class ImageNetDatasetLoader:
         return data_loaders
 
 
+
+
+
+
 def online_mean_and_sd(loader):
     """Compute the mean and sd in an online fashion
 
@@ -698,23 +564,23 @@ def online_mean_and_sd(loader):
     return fst_moment, torch.sqrt(snd_moment - fst_moment ** 2)
 
 
-class Cutout(object):
-    def __init__(self, length):
-        self.length = length
-
-    def __call__(self, img):
-        h, w = img.size(1), img.size(2)
-        mask = np.ones((h, w), np.float32)
-        y = np.random.randint(h)
-        x = np.random.randint(w)
-
-        y1 = np.clip(y - self.length // 2, 0, h)
-        y2 = np.clip(y + self.length // 2, 0, h)
-        x1 = np.clip(x - self.length // 2, 0, w)
-        x2 = np.clip(x + self.length // 2, 0, w)
-
-        mask[y1: y2, x1: x2] = 0.
-        mask = torch.from_numpy(mask)
-        mask = mask.expand_as(img)
-        img *= mask
-        return img
+if __name__ == '__main__':
+    # train_transform = transforms.Compose([
+    #     transforms.Resize((224, 224)),
+    #     transforms.ToTensor(),
+    # ])
+    # test = Clothing1MDataset(path='../datasets/clothing1M', transform=train_transform)
+    # loader = DataLoader(test,
+    #                     batch_size=128,
+    #                     num_workers=12,
+    #                     shuffle=True)
+    # mean, std = online_mean_and_sd(loader)
+    # print(mean)
+    # print(std)
+    #
+    # '''
+    #     tensor([0.7215, 0.6846, 0.6679])
+    #     tensor([0.3021, 0.3122, 0.3167])
+    # '''
+    train = NosieImageNet(root='../datasets/ILSVR2012', split='train')
+    valid = NosieImageNet(root='../datasets/ILSVR2012', split='val')
