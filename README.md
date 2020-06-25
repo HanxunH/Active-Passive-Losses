@@ -1,5 +1,5 @@
 # Normalized Loss Functions - Active Passive Losses
-Code for ICML2020 Paper ["Normalized Loss Functions for Deep Learning with Noisy Labels"]() (Preprint Version coming soon)
+Code for ICML2020 Paper ["Normalized Loss Functions for Deep Learning with Noisy Labels"](https://arxiv.org/abs/2006.13554) (Preprint Version coming soon)
 
 ## Requirements
 ```console
