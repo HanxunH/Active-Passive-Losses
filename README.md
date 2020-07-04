@@ -34,3 +34,17 @@ $  python3  main.py --exp_name      test_exp             \
                     --config_path   configs/cifar100/sym \
                     --seed          123
 ```
+
+
+## Citing this work
+If you use this code in your work, please cite the accompanying paper:
+
+```
+@inproceedings{ma2020normalized,
+  title={Normalized Loss Functions for Deep Learning with Noisy Labels},
+  author={Ma, Xingjun and Huang, Hanxun and Wang, Yisen and Romano, Simone and Erfani, Sarah and Bailey, James},
+  booktitle={ICML},
+  year={2020}
+}
+```
+
