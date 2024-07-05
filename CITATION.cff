@@ -1,0 +1,45 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Ma"
+  given-names: "Xingjun"
+  orcid: "https://orcid.org/0000-0003-2099-4973"
+- family-names: "Huang"
+  given-names: "Hanxun"
+  orcid: "https://orcid.org/0000-0002-2793-6680"
+- family-names: "Wang"
+  given-names: "Yisen"
+- family-names: "Romano"
+  given-names: "Simone"
+- family-names: "Erfani"
+  given-names: "Sarah"
+  orcid: "https://orcid.org/0000-0003-0885-0643"
+- family-names: "Bailey"
+  given-names: "James"
+  orcid: "https://orcid.org/0000-0002-3769-3811"
+title: "Normalized Loss Functions for Deep Learning with Noisy Labels"
+version: 0.0.1
+date-released: 2020-03-20
+url: "https://github.com/HanxunH/Active-Passive-Losses"
+preferred-citation:
+  type: conference-paper
+  title: "Normalized Loss Functions for Deep Learning with Noisy Labels"
+  authors:
+    - family-names: "Ma"
+      given-names: "Xingjun"
+      orcid: "https://orcid.org/0000-0003-2099-4973"
+    - family-names: "Huang"
+      given-names: "Hanxun"
+      orcid: "https://orcid.org/0000-0002-2793-6680"
+    - family-names: "Wang"
+      given-names: "Yisen"
+    - family-names: "Romano"
+      given-names: "Simone"
+    - family-names: "Erfani"
+      given-names: "Sarah"
+      orcid: "https://orcid.org/0000-0003-0885-0643"
+    - family-names: "Bailey"
+      given-names: "James"
+      orcid: "https://orcid.org/0000-0002-3769-3811"
+  collection-title: "ICML"
+  year: 2020
